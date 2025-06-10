@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .user-table, .module-table, .module-item-table, .task-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .user-table th, .user-table td,
+        .module-table th, .module-table td,
+        .module-item-table th, .module-item-table td,
+        .task-table th, .task-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .user-table th, .module-table th, .module-item-table th, .task-table th {
+            background-color: #f2f2f2;
+        }
+        .user-table .btn, .module-table .btn, .module-item-table .btn, .task-table .btn {
+            padding: 5px 10px;
+            margin: 2px;
+        }
+        .user-modal, .module-modal, .module-item-modal, .task-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .user-modal-content, .module-modal-content, .module-item-modal-content, .task-modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            width: 50%;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link active" id="users-tab" onclick="showTab('users')">Пользователи</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="modules-tab" onclick="showTab('modules')">Модули</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="module-items-tab" onclick="showTab('module-items')">Элементы модуля</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tasks-tab" onclick="showTab('tasks')">Задания</a>
+            </li>
+        </ul>
+
+
+        <div id="users-section">
+            <h2>Пользователи</h2>
+            <button class="btn btn-primary" onclick="showAddUserModal()">Добавить пользователя</button>
+            
+            <table class="user-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ник</th>
+                        <th>Email</th>
+                        <th>Роль</th>
+                        <th>Группа</th>
+                        <th>Имя</th>
+                        <th>Фамилия</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+
+        <div id="modules-section" style="display: none;">
+            <h2>Модули</h2>
+            <button class="btn btn-primary" onclick="showAddModuleModal()">Добавить модуль</button>
+            
+            <table class="module-table" id="modulesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th>Описание</th>
+                        <th>Категория</th>
+                        <th>Всего элементов</th>
+                        <th>Время создания</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div id="module-items-section" style="display: none;">
+            <h2>Элементы модуля</h2>
+            <button class="btn btn-primary" onclick="showAddModuleItemModal()">Добавить элемент</button>
+            
+            <table class="module-item-table" id="moduleItemsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Модуль</th>
+                        <th>Название</th>
+                        <th>Описание</th>
+                        <th>Контент</th>
+                        <th>Очки</th>
+                        <th>Время создания</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div id="tasks-section" style="display: none;">
+            <h2>Задания</h2>
+            <button class="btn btn-primary" onclick="showAddTaskModal()">Добавить задание</button>
+            
+            <table class="task-table" id="tasksTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th>Описание</th>
+                        <th>Тип</th>
+                        <th>Необходимое значение</th>
+                        <th>Время создания</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="userModal" class="user-modal">
+        <div class="user-modal-content">
+            <h3>Пользователь</h3>
+            <form id="userForm">
+                <input type="hidden" id="userId">
+                <div class="form-group">
+                    <label>Ник</label>
+                    <input type="text" id="userUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="userEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="userPassword">
+                </div>
+                <div class="form-group">
+                    <label>Роль</label>
+                    <select id="userRole" required>
+                        <option value="student">Студент</option>
+                        <option value="curator">Куратор</option>
+                        <option value="admin">Админ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Группа</label>
+                    <select id="userGroup"></select>
+                </div>
+                <div class="form-group">
+                    <label>Имя</label>
+                    <input type="text" id="userFirstname">
+                </div>
+                <div class="form-group">
+                    <label>Фамилия</label>
+                    <input type="text" id="userLastname">
+                </div>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">Сохранить</button>
+                <button type="button" class="btn btn-danger" onclick="closeUserModal()">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="moduleModal" class="module-modal">
+        <div class="module-modal-content">
+            <h3>Модуль</h3>
+            <form id="moduleForm">
+                <input type="hidden" id="moduleId">
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="moduleTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea id="moduleDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Категория</label>
+                    <input type="text" id="moduleCategory">
+                </div>
+                <div class="form-group">
+                    <label>Всего элементов</label>
+                    <input type="number" id="moduleTotalItems">
+                </div>
+                <button type="button" class="btn btn-primary" onclick="saveModule()">Сохранить</button>
+                <button type="button" class="btn btn-danger" onclick="closeModuleModal()">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="moduleItemModal" class="module-item-modal">
+        <div class="module-item-modal-content">
+            <h3>Элемент модуля</h3>
+            <form id="moduleItemForm">
+                <input type="hidden" id="moduleItemId">
+                <div class="form-group">
+                    <label>Модуль</label>
+                    <select id="moduleItemModule" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="moduleItemTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea id="moduleItemDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Контент</label>
+                    <textarea id="moduleItemContent" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Очки</label>
+                    <input type="number" id="moduleItemPoints" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="saveModuleItem()">Сохранить</button>
+                <button type="button" class="btn btn-danger" onclick="closeModuleItemModal()">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="taskModal" class="task-modal">
+        <div class="task-modal-content">
+            <h3>Задание</h3>
+            <form id="taskForm">
+                <input type="hidden" id="taskId">
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="taskTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea id="taskDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Тип</label>
+                    <select id="taskType" required>
+                        <option value="module_completion">Module Completion</option>
+                        <option value="points_earned">Points Earned</option>
+                        <option value="others">Others</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Необходимое значение</label>
+                    <input type="number" id="taskTargetValue" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="saveTask()">Сохранить</button>
+                <button type="button" class="btn btn-danger" onclick="closeTaskModal()">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsers();
+            loadModules();
+            loadModuleItems();
+            loadTasks();
+        });
+
+        function showTab(tabName) {
+            document.getElementById('users-section').style.display = tabName === 'users' ? 'block' : 'none';
+            document.getElementById('modules-section').style.display = tabName === 'modules' ? 'block' : 'none';
+            document.getElementById('module-items-section').style.display = tabName === 'module-items' ? 'block' : 'none';
+            document.getElementById('tasks-section').style.display = tabName === 'tasks' ? 'block' : 'none';
+            
+            document.getElementById('users-tab').classList.toggle('active', tabName === 'users');
+            document.getElementById('modules-tab').classList.toggle('active', tabName === 'modules');
+            document.getElementById('module-items-tab').classList.toggle('active', tabName === 'module-items');
+            document.getElementById('tasks-tab').classList.toggle('active', tabName === 'tasks');
+        }
+
+        function loadUsers() {
+            fetch('/admin/users')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#usersTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(user => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${user.userId}</td>
+                                <td>${user.username}</td>
+                                <td>${user.email}</td>
+                                <td>${user.role}</td>
+                                <td>${user.group ? user.group.groupName : ''}</td>
+                                <td>${user.firstname || ''}</td>
+                                <td>${user.lastname || ''}</td>
+                                <td>
+                                    <button class="btn btn-primary" onclick="editUser(${user.userId})">Edit</button>
+                                    <button class="btn btn-danger" onclick="deleteUser(${user.userId})">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        function showAddUserModal() {
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            loadGroupSelect();
+            document.getElementById('userModal').style.display = 'block';
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').style.display = 'none';
+        }
+
+        function loadGroupSelect() {
+            fetch('/admin/groups')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('userGroup');
+                    select.innerHTML = '<option value="">Select Group</option>';
+                    data.forEach(group => {
+                        select.innerHTML += `<option value="${group.groupId}">${group.groupName}</option>`;
+                    });
+                });
+        }
+
+        function editUser(id) {
+            fetch(`/admin/users/${id}`)
+                .then(response => response.json())
+                .then(user => {
+                    document.getElementById('userId').value = user.userId;
+                    document.getElementById('userUsername').value = user.username;
+                    document.getElementById('userEmail').value = user.email;
+                    document.getElementById('userRole').value = user.role;
+                    document.getElementById('userGroup').value = user.group ? user.group.groupId : '';
+                    document.getElementById('userFirstname').value = user.firstname || '';
+                    document.getElementById('userLastname').value = user.lastname || '';
+                    document.getElementById('userModal').style.display = 'block';
+                });
+        }
+
+        function saveUser() {
+            const user = {
+                userId: document.getElementById('userId').value || null,
+                username: document.getElementById('userUsername').value,
+                email: document.getElementById('userEmail').value,
+                passwordHash: document.getElementById('userPassword').value,
+                role: document.getElementById('userRole').value,
+                group: document.getElementById('userGroup').value ? { groupId: document.getElementById('userGroup').value } : null,
+                firstname: document.getElementById('userFirstname').value,
+                lastname: document.getElementById('userLastname').value
+            };
+
+            const method = user.userId ? 'PUT' : 'POST';
+            const url = user.userId ? `/admin/users/${user.userId}` : '/admin/users';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(user)
+            })
+            .then(response => response.json())
+            .then(() => {
+                closeUserModal();
+                loadUsers();
+            });
+        }
+
+        function deleteUser(id) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch(`/admin/users/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(() => loadUsers());
+            }
+        }
+
+        function loadModules() {
+            fetch('/admin/modules')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#modulesTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(module => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${module.moduleId}</td>
+                                <td>${module.title}</td>
+                                <td>${module.description || ''}</td>
+                                <td>${module.category || ''}</td>
+                                <td>${module.totalItems}</td>
+                                <td>${module.createdAt}</td>
+                                <td>
+                                    <button class="btn btn-primary" onclick="editModule(${module.moduleId})">Edit</button>
+                                    <button class="btn btn-danger" onclick="deleteModule(${module.moduleId})">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        function showAddModuleModal() {
+            document.getElementById('moduleForm').reset();
+            document.getElementById('moduleId').value = '';
+            document.getElementById('moduleModal').style.display = 'block';
+        }
+
+        function closeModuleModal() {
+            document.getElementById('moduleModal').style.display = 'none';
+        }
+
+        function editModule(id) {
+            fetch(`/admin/modules/${id}`)
+                .then(response => response.json())
+                .then(module => {
+                    document.getElementById('moduleId').value = module.moduleId;
+                    document.getElementById('moduleTitle').value = module.title;
+                    document.getElementById('moduleDescription').value = module.description || '';
+                    document.getElementById('moduleCategory').value = module.category || '';
+                    document.getElementById('moduleTotalItems').value = module.totalItems;
+                    document.getElementById('moduleModal').style.display = 'block';
+                });
+        }
+
+        function saveModule() {
+            const module = {
+                moduleId: document.getElementById('moduleId').value || null,
+                title: document.getElementById('moduleTitle').value,
+                description: document.getElementById('moduleDescription').value,
+                category: document.getElementById('moduleCategory').value,
+                totalItems: document.getElementById('moduleTotalItems').value
+            };
+
+            const method = module.moduleId ? 'PUT' : 'POST';
+            const url = module.moduleId ? `/admin/modules/${module.moduleId}` : '/admin/modules';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(module)
+            })
+            .then(response => response.json())
+            .then(() => {
+                closeModuleModal();
+                loadModules();
+            });
+        }
+
+        function deleteModule(id) {
+            if (confirm('Are you sure you want to delete this module?')) {
+                fetch(`/admin/modules/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(() => loadModules());
+            }
+        }
+
+        function loadModuleItems() {
+            fetch('/admin/module-items')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#moduleItemsTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(item => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${item.itemId}</td>
+                                <td>${item.module ? item.module.title : ''}</td>
+                                <td>${item.title}</td>
+                                <td>${item.description || ''}</td>
+                                <td>${item.content}</td>
+                                <td>${item.points}</td>
+                                <td>${item.createdAt}</td>
+                                <td>
+                                    <button class="btn btn-primary" onclick="editModuleItem(${item.itemId})">Edit</button>
+                                    <button class="btn btn-danger" onclick="deleteModuleItem(${item.itemId})">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        function showAddModuleItemModal() {
+            document.getElementById('moduleItemForm').reset();
+            document.getElementById('moduleItemId').value = '';
+            loadModuleSelect();
+            document.getElementById('moduleItemModal').style.display = 'block';
+        }
+
+        function closeModuleItemModal() {
+            document.getElementById('moduleItemModal').style.display = 'none';
+        }
+
+        function loadModuleSelect() {
+            fetch('/admin/modules')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('moduleItemModule');
+                    select.innerHTML = '<option value="">Select Module</option>';
+                    data.forEach(module => {
+                        select.innerHTML += `<option value="${module.moduleId}">${module.title}</option>`;
+                    });
+                });
+        }
+
+        function editModuleItem(id) {
+            fetch(`/admin/module-items/${id}`)
+                .then(response => response.json())
+                .then(item => {
+                    document.getElementById('moduleItemId').value = item.itemId;
+                    document.getElementById('moduleItemModule').value = item.module ? item.module.moduleId : '';
+                    document.getElementById('moduleItemTitle').value = item.title;
+                    document.getElementById('moduleItemDescription').value = item.description || '';
+                    document.getElementById('moduleItemContent').value = item.content;
+                    document.getElementById('moduleItemPoints').value = item.points;
+                    document.getElementById('moduleItemModal').style.display = 'block';
+                });
+        }
+
+        function saveModuleItem() {
+            const moduleItem = {
+                itemId: document.getElementById('moduleItemId').value || null,
+                module: { moduleId: document.getElementById('moduleItemModule').value },
+                title: document.getElementById('moduleItemTitle').value,
+                description: document.getElementById('moduleItemDescription').value,
+                content: document.getElementById('moduleItemContent').value,
+                points: document.getElementById('moduleItemPoints').value
+            };
+
+            const method = moduleItem.itemId ? 'PUT' : 'POST';
+            const url = moduleItem.itemId ? `/admin/module-items/${moduleItem.itemId}` : '/admin/module-items';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(moduleItem)
+            })
+            .then(response => response.json())
+            .then(() => {
+                closeModuleItemModal();
+                loadModuleItems();
+            });
+        }
+
+        function deleteModuleItem(id) {
+            if (confirm('Are you sure you want to delete this module item?')) {
+                fetch(`/admin/module-items/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(() => loadModuleItems());
+            }
+        }
+
+        function loadTasks() {
+            fetch('/admin/tasks')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#tasksTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(task => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${task.taskId}</td>
+                                <td>${task.title}</td>
+                                <td>${task.description || ''}</td>
+                                <td>${task.taskType}</td>
+                                <td>${task.targetValue}</td>
+                                <td>${task.createdAt}</td>
+                                <td>
+                                    <button class="btn btn-primary" onclick="editTask(${task.taskId})">Edit</button>
+                                    <button class="btn btn-danger" onclick="deleteTask(${task.taskId})">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        function showAddTaskModal() {
+            document.getElementById('taskForm').reset();
+            document.getElementById('taskId').value = '';
+            document.getElementById('taskModal').style.display = 'block';
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').style.display = 'none';
+        }
+
+        function editTask(id) {
+            fetch(`/admin/tasks/${id}`)
+                .then(response => response.json())
+                .then(task => {
+                    document.getElementById('taskId').value = task.taskId;
+                    document.getElementById('taskTitle').value = task.title;
+                    document.getElementById('taskDescription').value = task.description || '';
+                    document.getElementById('taskType').value = task.taskType;
+                    document.getElementById('taskTargetValue').value = task.targetValue;
+                    document.getElementById('taskModal').style.display = 'block';
+                });
+        }
+
+        function saveTask() {
+            const task = {
+                taskId: document.getElementById('taskId').value || null,
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDescription').value,
+                taskType: document.getElementById('taskType').value,
+                targetValue: document.getElementById('taskTargetValue').value
+            };
+
+            const method = task.taskId ? 'PUT' : 'POST';
+            const url = task.taskId ? `/admin/tasks/${task.taskId}` : '/admin/tasks';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(task)
+            })
+            .then(response => response.json())
+            .then(() => {
+                closeTaskModal();
+                loadTasks();
+            });
+        }
+
+        function deleteTask(id) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                fetch(`/admin/tasks/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(() => loadTasks());
+            }
+        }
+    </script>
+</body>
+</html>
